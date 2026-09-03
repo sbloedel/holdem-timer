@@ -13,10 +13,12 @@ const baseLevel: TimerLevel = {
 describe('CountdownTimer', () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
   });
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
   it('displays title, blinds, and hides the ante when it is 0', () => {
@@ -68,7 +70,7 @@ describe('CountdownTimer', () => {
     expect(screen.getByRole('timer')).toHaveTextContent('00:02:00');
   });
 
-  it('resets back to the initial time after running and adjusting', () => {
+  it('resets back to the initial time after running and adjusting, after confirming', () => {
     render(<CountdownTimer level={baseLevel} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Play' }));
@@ -79,7 +81,18 @@ describe('CountdownTimer', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
 
+    expect(window.confirm).toHaveBeenCalledWith('Reset the clock back to the initial time?');
     expect(screen.getByRole('timer')).toHaveTextContent('00:03:00');
     expect(screen.getByRole('button', { name: 'Play' })).toBeInTheDocument();
+  });
+
+  it('does not reset the time when the user cancels the confirmation', () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    render(<CountdownTimer level={baseLevel} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Increase time by 1 minute' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
+
+    expect(screen.getByRole('timer')).toHaveTextContent('00:04:00');
   });
 });

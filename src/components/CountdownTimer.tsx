@@ -1,5 +1,6 @@
 import { useCountdown } from '../hooks/useCountdown';
 import { PlayPauseButton } from './PlayPauseButton';
+import { ResetButton } from './ResetButton';
 import type { TimerLevel } from '../models/TimerLevel';
 import styles from './CountdownTimer.module.css';
 
@@ -27,23 +28,6 @@ export function CountdownTimer({ level }: CountdownTimerProps) {
   return (
     <div className={styles.container}>
       <h1 className={styles.title}>{level.title}</h1>
-
-      <div className={styles.blinds}>
-        <div className={styles.blindItem}>
-          <span className={styles.blindLabel}>Small Blind</span>
-          <span className={styles.blindValue}>{level.smallBlind}</span>
-        </div>
-        <div className={styles.blindItem}>
-          <span className={styles.blindLabel}>Big Blind</span>
-          <span className={styles.blindValue}>{level.bigBlind}</span>
-        </div>
-        {hasAnte && (
-          <div className={styles.blindItem}>
-            <span className={styles.blindLabel}>Ante</span>
-            <span className={styles.blindValue}>{level.ante}</span>
-          </div>
-        )}
-      </div>
 
       <div className={styles.timerRow}>
         <button
@@ -73,13 +57,29 @@ export function CountdownTimer({ level }: CountdownTimerProps) {
         </button>
       </div>
 
+      <div className={styles.blinds}>
+        <div className={styles.blindItem}>
+          <span className={styles.blindLabel}>Small Blind</span>
+          <span className={styles.blindValue}>{level.smallBlind}</span>
+        </div>
+        <div className={styles.blindItem}>
+          <span className={styles.blindLabel}>Big Blind</span>
+          <span className={styles.blindValue}>{level.bigBlind}</span>
+        </div>
+        {hasAnte && (
+          <div className={styles.blindItem}>
+            <span className={styles.blindLabel}>Ante</span>
+            <span className={styles.blindValue}>{level.ante}</span>
+          </div>
+        )}
+      </div>
+
       {isComplete && <p className={styles.status}>Time's up!</p>}
 
-      <PlayPauseButton isRunning={isRunning} onToggle={handleToggle} disabled={isComplete} />
-
-      <button type="button" className={styles.resetButton} onClick={reset}>
-        Reset
-      </button>
+      <div className={styles.controlsRow}>
+        <ResetButton onReset={reset} className={styles.resetPosition} />
+        <PlayPauseButton isRunning={isRunning} onToggle={handleToggle} disabled={isComplete} />
+      </div>
     </div>
   );
 }
