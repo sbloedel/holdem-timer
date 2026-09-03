@@ -1,0 +1,43 @@
+.button {
+  /* font-size drives icon size below via em units, so the whole button
+     scales together across phone/tablet/desktop. */
+  font-size: clamp(1.5rem, 5vw, 2.5rem);
+  width: 2.2em;
+  height: 2.2em;
+  border-radius: 50%;
+  border: none;
+  background: #2f9e44;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.playIcon {
+  width: 0;
+  height: 0;
+  border-top: 0.5em solid transparent;
+  border-bottom: 0.5em solid transparent;
+  border-left: 0.8em solid currentColor;
+  margin-left: 0.2em;
+}
+
+.pauseIcon {
+  display: flex;
+  gap: 0.25em;
+}
+
+.bar {
+  width: 0.28em;
+  height: 1em;
+  background: currentColor;
+  border-radius: 0.05em;
+}

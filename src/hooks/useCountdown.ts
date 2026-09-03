@@ -13,6 +13,8 @@ export interface UseCountdownResult extends CountdownTime {
   start: () => void;
   pause: () => void;
   reset: () => void;
+  /** Adjusts the remaining time by `deltaSeconds` (can be negative). Clamped at 0. */
+  adjustBy: (deltaSeconds: number) => void;
 }
 
 const toTime = (totalSeconds: number): CountdownTime => {
@@ -75,6 +77,10 @@ export function useCountdown(
     setSecondsLeft(initialSeconds);
   }, [initialSeconds]);
 
+  const adjustBy = useCallback((deltaSeconds: number) => {
+    setSecondsLeft((previous) => Math.max(0, previous + deltaSeconds));
+  }, []);
+
   const time = toTime(secondsLeft);
 
   return {
@@ -84,5 +90,6 @@ export function useCountdown(
     start,
     pause,
     reset,
+    adjustBy,
   };
 }
