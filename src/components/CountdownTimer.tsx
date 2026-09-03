@@ -24,57 +24,68 @@ export function CountdownTimer({ level }: CountdownTimerProps) {
   };
 
   const hasAnte = typeof level.ante === 'number' && level.ante > 0;
+  const hasHours = hours > 0;
 
   return (
     <div className={styles.container}>
-      <h1 className={styles.title}>{level.title}</h1>
+      <div className={styles.topSection}>
+        <h1 className={styles.title}>{level.title}</h1>
 
-      <div className={styles.timerRow}>
-        <button
-          type="button"
-          className={styles.adjustButton}
-          aria-label="Decrease time by 1 minute"
-          onClick={() => adjustBy(-ONE_MINUTE_IN_SECONDS)}
-        >
-          −
-        </button>
+        <div className={styles.timerRow}>
+          <button
+            type="button"
+            className={styles.adjustButton}
+            aria-label="Decrease time by 1 minute"
+            onClick={() => adjustBy(-ONE_MINUTE_IN_SECONDS)}
+          >
+            −
+          </button>
 
-        <div className={styles.display} role="timer" aria-live="polite">
-          <span className={styles.segment}>{pad(hours)}</span>
-          <span className={styles.colon}>:</span>
-          <span className={styles.segment}>{pad(minutes)}</span>
-          <span className={styles.colon}>:</span>
-          <span className={styles.segment}>{pad(seconds)}</span>
-        </div>
-
-        <button
-          type="button"
-          className={styles.adjustButton}
-          aria-label="Increase time by 1 minute"
-          onClick={() => adjustBy(ONE_MINUTE_IN_SECONDS)}
-        >
-          +
-        </button>
-      </div>
-
-      <div className={styles.blinds}>
-        <div className={styles.blindItem}>
-          <span className={styles.blindLabel}>Small Blind</span>
-          <span className={styles.blindValue}>{level.smallBlind}</span>
-        </div>
-        <div className={styles.blindItem}>
-          <span className={styles.blindLabel}>Big Blind</span>
-          <span className={styles.blindValue}>{level.bigBlind}</span>
-        </div>
-        {hasAnte && (
-          <div className={styles.blindItem}>
-            <span className={styles.blindLabel}>Ante</span>
-            <span className={styles.blindValue}>{level.ante}</span>
+          <div
+            className={`${styles.display} ${hasHours ? styles.displayWithHours : ''}`}
+            role="timer"
+            aria-live="polite"
+          >
+            {hasHours && (
+              <>
+                <span className={styles.segment}>{hours}</span>
+                <span className={styles.colon}>:</span>
+              </>
+            )}
+            <span className={styles.segment}>{pad(minutes)}</span>
+            <span className={styles.colon}>:</span>
+            <span className={styles.segment}>{pad(seconds)}</span>
           </div>
-        )}
-      </div>
 
-      {isComplete && <p className={styles.status}>Time's up!</p>}
+          <button
+            type="button"
+            className={styles.adjustButton}
+            aria-label="Increase time by 1 minute"
+            onClick={() => adjustBy(ONE_MINUTE_IN_SECONDS)}
+          >
+            +
+          </button>
+        </div>
+
+        <div className={styles.blinds}>
+          <div className={styles.blindItem}>
+            <span className={styles.blindLabel}>Small Blind</span>
+            <span className={styles.blindValue}>{level.smallBlind}</span>
+          </div>
+          <div className={styles.blindItem}>
+            <span className={styles.blindLabel}>Big Blind</span>
+            <span className={styles.blindValue}>{level.bigBlind}</span>
+          </div>
+          {hasAnte && (
+            <div className={styles.blindItem}>
+              <span className={styles.blindLabel}>Ante</span>
+              <span className={styles.blindValue}>{level.ante}</span>
+            </div>
+          )}
+        </div>
+
+        {isComplete && <p className={styles.status}>Time's up!</p>}
+      </div>
 
       <div className={styles.controlsRow}>
         <ResetButton onReset={reset} className={styles.resetPosition} />

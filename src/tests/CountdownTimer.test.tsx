@@ -40,7 +40,7 @@ describe('CountdownTimer', () => {
     render(<CountdownTimer level={baseLevel} />);
 
     const toggleButton = screen.getByRole('button', { name: 'Play' });
-    expect(screen.getByRole('timer')).toHaveTextContent('00:03:00');
+    expect(screen.getByRole('timer')).toHaveTextContent('03:00');
 
     fireEvent.click(toggleButton);
     expect(screen.getByRole('button', { name: 'Pause' })).toBeInTheDocument();
@@ -48,7 +48,7 @@ describe('CountdownTimer', () => {
     act(() => {
       vi.advanceTimersByTime(1000);
     });
-    expect(screen.getByRole('timer')).toHaveTextContent('00:02:59');
+    expect(screen.getByRole('timer')).toHaveTextContent('02:59');
 
     fireEvent.click(screen.getByRole('button', { name: 'Pause' }));
     expect(screen.getByRole('button', { name: 'Play' })).toBeInTheDocument();
@@ -56,18 +56,18 @@ describe('CountdownTimer', () => {
     act(() => {
       vi.advanceTimersByTime(2000);
     });
-    expect(screen.getByRole('timer')).toHaveTextContent('00:02:59');
+    expect(screen.getByRole('timer')).toHaveTextContent('02:59');
   });
 
   it('increments and decrements the remaining time by 1 minute', () => {
     render(<CountdownTimer level={baseLevel} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Increase time by 1 minute' }));
-    expect(screen.getByRole('timer')).toHaveTextContent('00:04:00');
+    expect(screen.getByRole('timer')).toHaveTextContent('04:00');
 
     fireEvent.click(screen.getByRole('button', { name: 'Decrease time by 1 minute' }));
     fireEvent.click(screen.getByRole('button', { name: 'Decrease time by 1 minute' }));
-    expect(screen.getByRole('timer')).toHaveTextContent('00:02:00');
+    expect(screen.getByRole('timer')).toHaveTextContent('02:00');
   });
 
   it('resets back to the initial time after running and adjusting, after confirming', () => {
@@ -82,7 +82,7 @@ describe('CountdownTimer', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
 
     expect(window.confirm).toHaveBeenCalledWith('Reset the clock back to the initial time?');
-    expect(screen.getByRole('timer')).toHaveTextContent('00:03:00');
+    expect(screen.getByRole('timer')).toHaveTextContent('03:00');
     expect(screen.getByRole('button', { name: 'Play' })).toBeInTheDocument();
   });
 
@@ -93,6 +93,19 @@ describe('CountdownTimer', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Increase time by 1 minute' }));
     fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
 
-    expect(screen.getByRole('timer')).toHaveTextContent('00:04:00');
+    expect(screen.getByRole('timer')).toHaveTextContent('04:00');
+  });
+
+  it('hides the hours segment when the remaining time is under 60 minutes', () => {
+    render(<CountdownTimer level={baseLevel} />);
+
+    expect(screen.getByRole('timer')).toHaveTextContent('03:00');
+    expect(screen.getByRole('timer')).not.toHaveTextContent(':03:00');
+  });
+
+  it('shows an unpadded hours segment once the remaining time reaches 60 minutes', () => {
+    render(<CountdownTimer level={{ ...baseLevel, initialSeconds: 65 * 60 + 49 }} />);
+
+    expect(screen.getByRole('timer')).toHaveTextContent('1:05:49');
   });
 });
