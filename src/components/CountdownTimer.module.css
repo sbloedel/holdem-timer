@@ -100,6 +100,14 @@
   justify-content: center;
 }
 
+.statusSection {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: clamp(1.5rem, 4.5vw, 1.9rem);
+  margin-top: clamp(0.5rem, 2vw, 1rem);
+}
+
 .status {
   font-size: clamp(1rem, 3vw, 1.25rem);
   color: #e5484d;
@@ -128,13 +136,6 @@
   left: clamp(0.85rem, 4vw, 1.5rem);
   top: 50%;
   transform: translateY(-50%);
-}
-
-.bottomStack {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
 }
 
 .transportGroup {

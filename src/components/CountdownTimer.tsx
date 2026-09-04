@@ -105,21 +105,21 @@ export function CountdownTimer({ structure }: CountdownTimerProps) {
         </div>
       </div>
 
+      <div className={styles.statusSection}>
+        {statusText && <p className={styles.status}>{statusText}</p>}
+      </div>
+
       <div className={styles.controlsRow}>
         <ResetButton onReset={reset} className={styles.resetPosition} />
 
-        <div className={styles.bottomStack}>
-          {statusText && <p className={styles.status}>{statusText}</p>}
-
-          <div className={styles.transportGroup}>
-            <SkipButton direction="previous" onClick={goToPrevious} disabled={isFirstLevel} />
-            <PlayPauseButton isRunning={isRunning} onToggle={handleToggle} disabled={isGameEnded} />
-            <SkipButton
-              direction="next"
-              onClick={isLastLevel ? endGame : goToNext}
-              confirmMessage={isLastLevel ? 'This is the last level. End the game?' : undefined}
-            />
-          </div>
+        <div className={styles.transportGroup}>
+          <SkipButton direction="previous" onClick={goToPrevious} disabled={isFirstLevel} />
+          <PlayPauseButton isRunning={isRunning} onToggle={handleToggle} disabled={isGameEnded} />
+          <SkipButton
+            direction="next"
+            onClick={isLastLevel ? endGame : goToNext}
+            confirmMessage={isLastLevel ? 'This is the last level. End the game?' : undefined}
+          />
         </div>
       </div>
     </div>
