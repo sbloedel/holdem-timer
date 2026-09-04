@@ -1,19 +1,35 @@
-import { useCountdown } from '../hooks/useCountdown';
+import { useBlindStructureTimer } from '../hooks/useBlindStructureTimer';
 import { PlayPauseButton } from './PlayPauseButton';
 import { ResetButton } from './ResetButton';
-import type { TimerLevel } from '../models/TimerLevel';
+import { SkipButton } from './SkipButton';
+import type { BlindStructure } from '../models/BlindStructure';
 import styles from './CountdownTimer.module.css';
 
 const pad = (value: number): string => value.toString().padStart(2, '0');
 const ONE_MINUTE_IN_SECONDS = 60;
 
 export interface CountdownTimerProps {
-  level: TimerLevel;
+  structure: BlindStructure;
 }
 
-export function CountdownTimer({ level }: CountdownTimerProps) {
-  const { hours, minutes, seconds, isRunning, isComplete, start, pause, reset, adjustBy } =
-    useCountdown(level.initialSeconds, { autoStart: false });
+export function CountdownTimer({ structure }: CountdownTimerProps) {
+  const {
+    level,
+    hours,
+    minutes,
+    seconds,
+    isRunning,
+    isGameEnded,
+    isFirstLevel,
+    isLastLevel,
+    start,
+    pause,
+    reset,
+    adjustBy,
+    goToPrevious,
+    goToNext,
+    endGame,
+  } = useBlindStructureTimer(structure);
 
   const handleToggle = () => {
     if (isRunning) {
@@ -26,6 +42,8 @@ export function CountdownTimer({ level }: CountdownTimerProps) {
   const hasAnte = typeof level.ante === 'number' && level.ante > 0;
   const hasHours = hours > 0;
 
+  const statusText = isGameEnded ? 'Game has ended' : !isRunning ? 'Press Play' : null;
+
   return (
     <div className={styles.container}>
       <div className={styles.topSection}>
@@ -37,6 +55,7 @@ export function CountdownTimer({ level }: CountdownTimerProps) {
             className={styles.adjustButton}
             aria-label="Decrease time by 1 minute"
             onClick={() => adjustBy(-ONE_MINUTE_IN_SECONDS)}
+            disabled={isGameEnded}
           >
             −
           </button>
@@ -62,6 +81,7 @@ export function CountdownTimer({ level }: CountdownTimerProps) {
             className={styles.adjustButton}
             aria-label="Increase time by 1 minute"
             onClick={() => adjustBy(ONE_MINUTE_IN_SECONDS)}
+            disabled={isGameEnded}
           >
             +
           </button>
@@ -83,13 +103,24 @@ export function CountdownTimer({ level }: CountdownTimerProps) {
             </div>
           )}
         </div>
-
-        {isComplete && <p className={styles.status}>Time's up!</p>}
       </div>
 
       <div className={styles.controlsRow}>
         <ResetButton onReset={reset} className={styles.resetPosition} />
-        <PlayPauseButton isRunning={isRunning} onToggle={handleToggle} disabled={isComplete} />
+
+        <div className={styles.bottomStack}>
+          {statusText && <p className={styles.status}>{statusText}</p>}
+
+          <div className={styles.transportGroup}>
+            <SkipButton direction="previous" onClick={goToPrevious} disabled={isFirstLevel} />
+            <PlayPauseButton isRunning={isRunning} onToggle={handleToggle} disabled={isGameEnded} />
+            <SkipButton
+              direction="next"
+              onClick={isLastLevel ? endGame : goToNext}
+              confirmMessage={isLastLevel ? 'This is the last level. End the game?' : undefined}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

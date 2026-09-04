@@ -1,8 +1,8 @@
 import { CountdownTimer } from '../components/CountdownTimer';
-import { getDefaultTimerLevel } from '../services/timerLevelService';
+import { getDefaultBlindStructure } from '../services/blindStructureService';
 
 export function TimerPage() {
-  const level = getDefaultTimerLevel();
+  const structure = getDefaultBlindStructure();
 
-  return <CountdownTimer level={level} />;
+  return <CountdownTimer structure={structure} />;
 }
