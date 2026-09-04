@@ -46,6 +46,7 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   opacity: 0.7;
+  margin-bottom: clamp(0.5rem, 2vw, 0.85rem);
 }
 
 .blindValue {
@@ -100,12 +101,19 @@
   justify-content: center;
 }
 
+.bottomGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  gap: 6px;
+}
+
 .statusSection {
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: clamp(1.5rem, 4.5vw, 1.9rem);
-  margin-top: clamp(0.5rem, 2vw, 1rem);
 }
 
 .status {
@@ -120,14 +128,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100vw;
-  margin-left: calc(50% - 50vw);
-  margin-right: calc(50% - 50vw);
+  width: 100%;
   min-height: clamp(2rem, 6vw, 2.75rem);
   padding: clamp(0.75rem, 3vw, 1.25rem) clamp(1.25rem, 5vw, 2.5rem);
   background: rgba(255, 255, 255, 0.06);
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: clamp(0.5rem, 2vw, 0.75rem);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
   box-sizing: border-box;
 }
 
