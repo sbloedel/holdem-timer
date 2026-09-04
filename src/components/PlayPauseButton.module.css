@@ -1,7 +1,7 @@
 .button {
   /* font-size drives icon size below via em units, so the whole button
      scales together across phone/tablet/desktop. */
-  font-size: clamp(1.5rem, 5vw, 2.5rem);
+  font-size: clamp(1.1rem, 3.5vw, 1.6rem);
   width: 2.2em;
   height: 2.2em;
   border-radius: 50%;

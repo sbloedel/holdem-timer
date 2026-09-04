@@ -11,7 +11,7 @@ export function getDefaultTimerLevel(): TimerLevel {
   return {
     title: 'Level 1',
     initialSeconds: FIVE_MINUTES_IN_SECONDS,
-    smallBlind: 20,
-    bigBlind: 10,
+    smallBlind: 10,
+    bigBlind: 20,
   };
 }
