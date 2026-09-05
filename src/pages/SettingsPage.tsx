@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import type { BlindStructure } from '../models/BlindStructure';
 import type { TimerLevel } from '../models/TimerLevel';
 import {
@@ -13,23 +13,54 @@ import {
 } from '../services/blindStructureStorage';
 import styles from './SettingsPage.module.css';
 
+/** A level as edited in the form: numeric fields are raw strings so the
+ * user can freely clear/retype them (e.g. delete a leading "0") without
+ * the input snapping back to a coerced value on every keystroke. */
+interface LevelDraft {
+  id: string;
+  title: string;
+  minutes: string;
+  smallBlind: string;
+  bigBlind: string;
+  ante: string;
+}
+
 interface StructureDraft {
   /** The structure's name before editing started; null when creating a new one. */
   originalName: string | null;
   name: string;
   description: string;
-  levels: TimerLevel[];
+  levels: LevelDraft[];
 }
 
-const FIVE_MINUTES_IN_SECONDS = 5 * 60;
-
-function createLevel(index: number): TimerLevel {
-  return { title: `Level ${index + 1}`, initialSeconds: FIVE_MINUTES_IN_SECONDS, smallBlind: 10, bigBlind: 20, ante: 0 };
+function generateId(): string {
+  return typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : Math.random().toString(36).slice(2);
 }
 
-function sanitizeFileName(name: string): string {
-  const cleaned = name.trim().toLowerCase().replace(/[^a-z0-9-]+/g, '-');
-  return cleaned || 'blind-structure';
+function createLevelDraft(index: number): LevelDraft {
+  return { id: generateId(), title: `Level ${index + 1}`, minutes: '5', smallBlind: '10', bigBlind: '20', ante: '0' };
+}
+
+function toLevelDraft(level: TimerLevel): LevelDraft {
+  return {
+    id: generateId(),
+    title: level.title,
+    minutes: String(level.initialSeconds / 60),
+    smallBlind: String(level.smallBlind),
+    bigBlind: String(level.bigBlind),
+    ante: String(level.ante ?? 0),
+  };
+}
+
+function toTimerLevel(levelDraft: LevelDraft): TimerLevel {
+  const minutes = Math.max(1, Number.parseInt(levelDraft.minutes, 10) || 0);
+  return {
+    title: levelDraft.title.trim() || 'Level',
+    initialSeconds: minutes * 60,
+    smallBlind: Number.parseInt(levelDraft.smallBlind, 10) || 0,
+    bigBlind: Number.parseInt(levelDraft.bigBlind, 10) || 0,
+    ante: Number.parseInt(levelDraft.ante, 10) || 0,
+  };
 }
 
 function downloadJson(fileName: string, structures: BlindStructure[]): void {
@@ -44,14 +75,58 @@ function downloadJson(fileName: string, structures: BlindStructure[]): void {
   URL.revokeObjectURL(url);
 }
 
+function PlusIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className={styles.icon} aria-hidden="true" focusable="false">
+      <path fill="currentColor" d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z" />
+    </svg>
+  );
+}
+
+function PencilIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className={styles.icon} aria-hidden="true" focusable="false">
+      <path
+        fill="currentColor"
+        d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"
+      />
+    </svg>
+  );
+}
+
+function XIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className={styles.icon} aria-hidden="true" focusable="false">
+      <path
+        fill="currentColor"
+        d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
+      />
+    </svg>
+  );
+}
+
+function GripIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className={styles.icon} aria-hidden="true" focusable="false">
+      <path
+        fill="currentColor"
+        d="M9 8h2V6H9v2zm4 0h2V6h-2v2zM9 13h2v-2H9v2zm4 0h2v-2h-2v2zm-4 5h2v-2H9v2zm4 0h2v-2h-2v2z"
+      />
+    </svg>
+  );
+}
+
 export function SettingsPage() {
+  const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const rowRefs = useRef(new Map<string, HTMLTableRowElement>());
 
   const [structures, setStructures] = useState<BlindStructure[]>(() => getAllBlindStructures());
   const [selectedName, setSelectedName] = useState<string | null>(() => getSelectedStructureName());
   const [draft, setDraft] = useState<StructureDraft | null>(null);
   const [nameError, setNameError] = useState<string | null>(null);
-  const [exportSelection, setExportSelection] = useState<Set<string>>(new Set());
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
 
   const refresh = () => {
     setStructures(getAllBlindStructures());
@@ -59,7 +134,7 @@ export function SettingsPage() {
   };
 
   const handleCreateNew = () => {
-    setDraft({ originalName: null, name: '', description: '', levels: [createLevel(0)] });
+    setDraft({ originalName: null, name: '', description: '', levels: [createLevelDraft(0)] });
     setNameError(null);
   };
 
@@ -68,7 +143,7 @@ export function SettingsPage() {
       originalName: structure.name,
       name: structure.name,
       description: structure.description,
-      levels: structure.levels.map((level) => ({ ...level })),
+      levels: structure.levels.map(toLevelDraft),
     });
     setNameError(null);
   };
@@ -76,6 +151,11 @@ export function SettingsPage() {
   const handleCancelEdit = () => {
     setDraft(null);
     setNameError(null);
+  };
+
+  const handleSelectAndGoToClock = (name: string) => {
+    setSelectedStructureName(name);
+    navigate('/');
   };
 
   const handleDelete = (name: string) => {
@@ -90,17 +170,7 @@ export function SettingsPage() {
     if (draft?.originalName === name) {
       setDraft(null);
     }
-    setExportSelection((previous) => {
-      const next = new Set(previous);
-      next.delete(name);
-      return next;
-    });
     refresh();
-  };
-
-  const handleUseOnClock = (name: string) => {
-    setSelectedStructureName(name);
-    setSelectedName(name);
   };
 
   const handleSaveDraft = () => {
@@ -124,7 +194,7 @@ export function SettingsPage() {
     const newStructure: BlindStructure = {
       name: trimmedName,
       description: draft.description.trim(),
-      levels: draft.levels,
+      levels: draft.levels.map(toTimerLevel),
     };
     saveBlindStructure(newStructure, draft.originalName ?? undefined);
     setDraft(null);
@@ -132,19 +202,27 @@ export function SettingsPage() {
     refresh();
   };
 
-  const updateLevel = (index: number, patch: Partial<TimerLevel>) => {
+  const updateLevelField = (id: string, field: keyof Omit<LevelDraft, 'id'>, value: string) => {
     setDraft((current) =>
       current
-        ? { ...current, levels: current.levels.map((level, i) => (i === index ? { ...level, ...patch } : level)) }
+        ? { ...current, levels: current.levels.map((level) => (level.id === id ? { ...level, [field]: value } : level)) }
         : current,
     );
   };
 
+  const handleNumericFieldChange =
+    (id: string, field: 'minutes' | 'smallBlind' | 'bigBlind' | 'ante') =>
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      // Strip anything that isn't a digit so the field always allows being
+      // fully cleared (including a leading "0") without snapping back.
+      updateLevelField(id, field, event.target.value.replace(/[^0-9]/g, ''));
+    };
+
   const addLevel = () => {
-    setDraft((current) => (current ? { ...current, levels: [...current.levels, createLevel(current.levels.length)] } : current));
+    setDraft((current) => (current ? { ...current, levels: [...current.levels, createLevelDraft(current.levels.length)] } : current));
   };
 
-  const removeLevel = (index: number) => {
+  const removeLevel = (id: string) => {
     setDraft((current) => {
       if (!current) {
         return current;
@@ -153,29 +231,86 @@ export function SettingsPage() {
         window.alert('A blind structure needs at least one level.');
         return current;
       }
-      return { ...current, levels: current.levels.filter((_, i) => i !== index) };
+      return { ...current, levels: current.levels.filter((level) => level.id !== id) };
     });
   };
 
-  const toggleExportSelection = (name: string) => {
-    setExportSelection((previous) => {
-      const next = new Set(previous);
-      if (next.has(name)) {
-        next.delete(name);
-      } else {
-        next.add(name);
+  const setRowRef = (id: string) => (el: HTMLTableRowElement | null) => {
+    if (el) {
+      rowRefs.current.set(id, el);
+    } else {
+      rowRefs.current.delete(id);
+    }
+  };
+
+  // Determines where a dragged row would land if dropped at `clientY`, by
+  // comparing it against the vertical midpoint of each row still in the
+  // list (using Pointer Events so this works for both mouse and touch,
+  // unlike the native HTML5 drag-and-drop API which iOS Safari doesn't
+  // support for touch input).
+  const getInsertionIndex = (clientY: number): number => {
+    const levels = draft?.levels ?? [];
+    for (let i = 0; i < levels.length; i++) {
+      const el = rowRefs.current.get(levels[i].id);
+      if (!el) {
+        continue;
       }
-      return next;
-    });
+      const rect = el.getBoundingClientRect();
+      if (clientY < rect.top + rect.height / 2) {
+        return i;
+      }
+    }
+    return levels.length;
   };
 
-  const handleExportSelected = () => {
-    const selected = structures.filter((structure) => exportSelection.has(structure.name));
-    if (selected.length === 0) {
+  const handleHandlePointerDown = (id: string) => (event: React.PointerEvent<HTMLSpanElement>) => {
+    event.preventDefault();
+    const index = draft?.levels.findIndex((level) => level.id === id) ?? null;
+    setDraggedId(id);
+    setHoverIndex(index === -1 ? null : index);
+    try {
+      event.currentTarget.setPointerCapture?.(event.pointerId);
+    } catch {
+      // Some environments (or synthetic pointer events) don't have an
+      // active pointer to capture; dragging still works via document-wide
+      // pointermove/up handling below.
+    }
+  };
+
+  const handleHandlePointerMove = (event: React.PointerEvent<HTMLSpanElement>) => {
+    if (!draggedId) {
       return;
     }
-    const fileName = selected.length === 1 ? `${sanitizeFileName(selected[0].name)}.json` : 'blind-structures.json';
-    downloadJson(fileName, selected);
+    setHoverIndex(getInsertionIndex(event.clientY));
+  };
+
+  const finishDrag = () => {
+    setDraft((current) => {
+      if (!current || !draggedId || hoverIndex === null) {
+        return current;
+      }
+      const fromIndex = current.levels.findIndex((level) => level.id === draggedId);
+      if (fromIndex === -1 || fromIndex === hoverIndex) {
+        return current;
+      }
+      const levels = [...current.levels];
+      const [moved] = levels.splice(fromIndex, 1);
+      const toIndex = hoverIndex > fromIndex ? hoverIndex - 1 : hoverIndex;
+      levels.splice(toIndex, 0, moved);
+      return { ...current, levels };
+    });
+    setDraggedId(null);
+    setHoverIndex(null);
+  };
+
+  const handleHandlePointerUp = () => finishDrag();
+  const handleHandlePointerCancel = () => {
+    setDraggedId(null);
+    setHoverIndex(null);
+  };
+
+  const handleExportAll = () => {
+    downloadJson('blind-structures.json', structures);
   };
 
   const handleImportButtonClick = () => {
@@ -233,25 +368,22 @@ export function SettingsPage() {
     <div className={styles.page}>
       <div className={styles.header}>
         <h1 className={styles.title}>Blind Structures</h1>
-        <Link to="/" className={styles.backLink}>
-          ← Back to Clock
-        </Link>
       </div>
 
       <div className={styles.toolbar}>
-        <button type="button" className={styles.button} onClick={handleCreateNew}>
-          + New Blind Structure
-        </button>
         <button
           type="button"
-          className={styles.button}
-          onClick={handleExportSelected}
-          disabled={exportSelection.size === 0}
+          className={`${styles.iconButton} ${styles.newButton}`}
+          onClick={handleCreateNew}
+          aria-label="New Blind Structure"
         >
-          Export Selected ({exportSelection.size})
+          <PlusIcon />
+        </button>
+        <button type="button" className={styles.button} onClick={handleExportAll}>
+          Export
         </button>
         <button type="button" className={styles.button} onClick={handleImportButtonClick}>
-          Import JSON
+          Import
         </button>
         <input
           ref={fileInputRef}
@@ -266,15 +398,11 @@ export function SettingsPage() {
       <ul className={styles.list}>
         {structures.map((structure) => (
           <li key={structure.name} className={styles.listItem}>
-            <input
-              type="checkbox"
-              className={styles.checkbox}
-              checked={exportSelection.has(structure.name)}
-              onChange={() => toggleExportSelection(structure.name)}
-              aria-label={`Select ${structure.name} for export`}
-            />
-
-            <div className={styles.listItemInfo}>
+            <button
+              type="button"
+              className={styles.listItemMain}
+              onClick={() => handleSelectAndGoToClock(structure.name)}
+            >
               <div className={styles.listItemName}>
                 {structure.name}
                 {structure.name === selectedName && <span className={styles.selectedBadge}>Selected</span>}
@@ -283,22 +411,24 @@ export function SettingsPage() {
               <div className={styles.listItemLevels}>
                 {structure.levels.length} level{structure.levels.length === 1 ? '' : 's'}
               </div>
-            </div>
+            </button>
 
             <div className={styles.listItemActions}>
               <button
                 type="button"
-                className={styles.button}
-                onClick={() => handleUseOnClock(structure.name)}
-                disabled={structure.name === selectedName}
+                className={`${styles.iconButton} ${styles.rowIconButton}`}
+                onClick={() => handleEdit(structure)}
+                aria-label={`Edit ${structure.name}`}
               >
-                Use on Clock
+                <PencilIcon />
               </button>
-              <button type="button" className={styles.button} onClick={() => handleEdit(structure)}>
-                Edit
-              </button>
-              <button type="button" className={styles.button} onClick={() => handleDelete(structure.name)}>
-                Delete
+              <button
+                type="button"
+                className={`${styles.iconButton} ${styles.rowIconButton}`}
+                onClick={() => handleDelete(structure.name)}
+                aria-label={`Delete ${structure.name}`}
+              >
+                <XIcon />
               </button>
             </div>
           </li>
@@ -332,6 +462,7 @@ export function SettingsPage() {
             <table className={styles.levelsTable}>
               <thead>
                 <tr>
+                  <th />
                   <th>Title</th>
                   <th>Minutes</th>
                   <th>Small Blind</th>
@@ -341,56 +472,87 @@ export function SettingsPage() {
                 </tr>
               </thead>
               <tbody>
-                {draft.levels.map((level, index) => (
-                  <tr key={index}>
+                {draft.levels.map((levelDraft, index) => {
+                  const isLastRow = index === draft.levels.length - 1;
+                  const isDropTarget =
+                    Boolean(draggedId) &&
+                    (hoverIndex === index || (isLastRow && hoverIndex === draft.levels.length));
+                  return (
+                  <tr
+                    key={levelDraft.id}
+                    ref={setRowRef(levelDraft.id)}
+                    className={[
+                      styles.levelRow,
+                      draggedId === levelDraft.id ? styles.dragging : '',
+                      isDropTarget ? styles.dropTarget : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                  >
+                    <td>
+                      <span
+                        className={styles.dragHandle}
+                        role="button"
+                        tabIndex={-1}
+                        aria-label={`Reorder level ${index + 1}`}
+                        onPointerDown={handleHandlePointerDown(levelDraft.id)}
+                        onPointerMove={handleHandlePointerMove}
+                        onPointerUp={handleHandlePointerUp}
+                        onPointerCancel={handleHandlePointerCancel}
+                      >
+                        <GripIcon />
+                      </span>
+                    </td>
                     <td>
                       <input
                         className={styles.input}
-                        value={level.title}
+                        value={levelDraft.title}
                         aria-label={`Level ${index + 1} title`}
-                        onChange={(event) => updateLevel(index, { title: event.target.value })}
+                        onChange={(event) => updateLevelField(levelDraft.id, 'title', event.target.value)}
                       />
                     </td>
                     <td>
                       <input
-                        type="number"
-                        min={1}
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         className={styles.input}
-                        value={level.initialSeconds / 60}
+                        value={levelDraft.minutes}
                         aria-label={`Level ${index + 1} minutes`}
-                        onChange={(event) =>
-                          updateLevel(index, { initialSeconds: Math.max(1, Number(event.target.value) || 0) * 60 })
-                        }
+                        onChange={handleNumericFieldChange(levelDraft.id, 'minutes')}
                       />
                     </td>
                     <td>
                       <input
-                        type="number"
-                        min={0}
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         className={styles.input}
-                        value={level.smallBlind}
+                        value={levelDraft.smallBlind}
                         aria-label={`Level ${index + 1} small blind`}
-                        onChange={(event) => updateLevel(index, { smallBlind: Number(event.target.value) || 0 })}
+                        onChange={handleNumericFieldChange(levelDraft.id, 'smallBlind')}
                       />
                     </td>
                     <td>
                       <input
-                        type="number"
-                        min={0}
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         className={styles.input}
-                        value={level.bigBlind}
+                        value={levelDraft.bigBlind}
                         aria-label={`Level ${index + 1} big blind`}
-                        onChange={(event) => updateLevel(index, { bigBlind: Number(event.target.value) || 0 })}
+                        onChange={handleNumericFieldChange(levelDraft.id, 'bigBlind')}
                       />
                     </td>
                     <td>
                       <input
-                        type="number"
-                        min={0}
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         className={styles.input}
-                        value={level.ante ?? 0}
+                        value={levelDraft.ante}
                         aria-label={`Level ${index + 1} ante`}
-                        onChange={(event) => updateLevel(index, { ante: Number(event.target.value) || 0 })}
+                        onChange={handleNumericFieldChange(levelDraft.id, 'ante')}
                       />
                     </td>
                     <td>
@@ -398,13 +560,14 @@ export function SettingsPage() {
                         type="button"
                         className={styles.removeLevelButton}
                         aria-label={`Remove level ${index + 1}`}
-                        onClick={() => removeLevel(index)}
+                        onClick={() => removeLevel(levelDraft.id)}
                       >
                         ✕
                       </button>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

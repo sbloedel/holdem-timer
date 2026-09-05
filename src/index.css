@@ -57,13 +57,35 @@
   text-align: center;
   border-inline: 1px solid var(--border);
   min-height: 100svh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
 }
 
+/* Phones (portrait width or short landscape height): use the full screen
+   instead of the bordered, max-width "card" used on desktop/tablet. */
+@media (max-width: 480px), (max-height: 500px) {
+  #root {
+    width: 100%;
+    border-inline: none;
+  }
+}
+
+html,
 body {
   margin: 0;
+  /* Never show a horizontal scrollbar; pages that need vertical scrolling
+     (e.g. Settings) still get one automatically. */
+  overflow-x: hidden;
+}
+
+/* Toggled on <html> while the clock screen is mounted (see
+   useBodyScrollLock), so the timer screen never needs scrollbars. */
+html.no-scroll,
+html.no-scroll body {
+  overflow: hidden;
+  height: 100%;
 }
 
 h1,

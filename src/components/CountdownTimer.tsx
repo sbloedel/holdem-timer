@@ -1,5 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useBlindStructureTimer } from '../hooks/useBlindStructureTimer';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
+import { useWakeLock } from '../hooks/useWakeLock';
 import { PlayPauseButton } from './PlayPauseButton';
 import { ResetButton } from './ResetButton';
 import { SettingsButton } from './SettingsButton';
@@ -33,6 +35,11 @@ export function CountdownTimer({ structure }: CountdownTimerProps) {
     goToNext,
     endGame,
   } = useBlindStructureTimer(structure);
+
+  // The clock screen should never need to scroll, and should keep the
+  // device's screen awake for as long as it's being viewed.
+  useBodyScrollLock(true);
+  useWakeLock(true);
 
   const handleToggle = () => {
     if (isRunning) {
