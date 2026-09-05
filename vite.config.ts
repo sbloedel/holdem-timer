@@ -5,8 +5,9 @@ import { visualizer } from 'rollup-plugin-visualizer';
 
 // https://vite.dev/config/
 export default defineConfig({
-  // Serve from the repo name when built for GitHub Pages, root otherwise.
-  base: process.env.GITHUB_PAGES === 'true' ? '/holdem-timer/' : '/',
+  // Served from the root of the custom domain (holdem-timer.com), so
+  // assets always resolve from "/" regardless of build target.
+  base: '/',
   plugins: [
     react(),
     // Generates dist/stats.html to inspect bundle composition and verify

@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "build:analyze": "tsc -b && cross-env ANALYZE=true vite build",
-    "build:pages": "tsc -b && cross-env GITHUB_PAGES=true vite build",
+    "build:pages": "tsc -b && vite build",
     "preview": "vite preview",
     "lint": "oxlint",
     "typecheck": "tsc -b --noEmit",
