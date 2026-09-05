@@ -1,9 +1,13 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { TimerPage } from '../pages/TimerPage';
 
 describe('TimerPage', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
   it('renders the default level with a 5 minute countdown and blinds, no ante', () => {
     render(
       <MemoryRouter>

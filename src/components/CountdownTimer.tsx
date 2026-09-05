@@ -1,6 +1,8 @@
+import { useNavigate } from 'react-router-dom';
 import { useBlindStructureTimer } from '../hooks/useBlindStructureTimer';
 import { PlayPauseButton } from './PlayPauseButton';
 import { ResetButton } from './ResetButton';
+import { SettingsButton } from './SettingsButton';
 import { SkipButton } from './SkipButton';
 import type { BlindStructure } from '../models/BlindStructure';
 import styles from './CountdownTimer.module.css';
@@ -13,6 +15,7 @@ export interface CountdownTimerProps {
 }
 
 export function CountdownTimer({ structure }: CountdownTimerProps) {
+  const navigate = useNavigate();
   const {
     level,
     hours,
@@ -37,6 +40,17 @@ export function CountdownTimer({ structure }: CountdownTimerProps) {
     } else {
       start();
     }
+  };
+
+  const handleSettingsClick = () => {
+    if (isRunning) {
+      const confirmed = window.confirm('Stop the timer and go to Settings?');
+      if (!confirmed) {
+        return;
+      }
+      pause();
+    }
+    navigate('/settings');
   };
 
   const hasAnte = typeof level.ante === 'number' && level.ante > 0;
@@ -122,6 +136,8 @@ export function CountdownTimer({ structure }: CountdownTimerProps) {
               confirmMessage={isLastLevel ? 'This is the last level. End the game?' : undefined}
             />
           </div>
+
+          <SettingsButton onClick={handleSettingsClick} className={styles.settingsPosition} />
         </div>
       </div>
     </div>

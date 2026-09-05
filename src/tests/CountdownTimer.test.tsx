@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import { CountdownTimer } from '../components/CountdownTimer';
 import type { BlindStructure } from '../models/BlindStructure';
 
@@ -13,6 +14,14 @@ const baseStructure: BlindStructure = {
   ],
 };
 
+function renderTimer(structure: BlindStructure = baseStructure) {
+  return render(
+    <MemoryRouter>
+      <CountdownTimer structure={structure} />
+    </MemoryRouter>,
+  );
+}
+
 describe('CountdownTimer', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -25,7 +34,7 @@ describe('CountdownTimer', () => {
   });
 
   it('displays title, blinds, and hides the ante when it is 0', () => {
-    render(<CountdownTimer structure={baseStructure} />);
+    renderTimer();
 
     expect(screen.getByRole('heading', { name: 'Level 1' })).toBeInTheDocument();
     expect(screen.getByText('Small Blind').nextSibling).toHaveTextContent('20');
@@ -38,19 +47,19 @@ describe('CountdownTimer', () => {
       ...baseStructure,
       levels: [{ ...baseStructure.levels[0], ante: 5 }, ...baseStructure.levels.slice(1)],
     };
-    render(<CountdownTimer structure={structure} />);
+    renderTimer(structure);
 
     expect(screen.getByText('Ante').nextSibling).toHaveTextContent('5');
   });
 
   it('shows "Press Play" before the timer starts', () => {
-    render(<CountdownTimer structure={baseStructure} />);
+    renderTimer();
 
     expect(screen.getByText('Press Play')).toBeInTheDocument();
   });
 
   it('starts paused and toggles to running when Play is pressed', () => {
-    render(<CountdownTimer structure={baseStructure} />);
+    renderTimer();
 
     const toggleButton = screen.getByRole('button', { name: 'Play' });
     expect(screen.getByRole('timer')).toHaveTextContent('03:00');
@@ -75,7 +84,7 @@ describe('CountdownTimer', () => {
   });
 
   it('increments and decrements the remaining time by 1 minute', () => {
-    render(<CountdownTimer structure={baseStructure} />);
+    renderTimer();
 
     fireEvent.click(screen.getByRole('button', { name: 'Increase time by 1 minute' }));
     expect(screen.getByRole('timer')).toHaveTextContent('04:00');
@@ -86,7 +95,7 @@ describe('CountdownTimer', () => {
   });
 
   it('resets back to the initial time after running and adjusting, after confirming', () => {
-    render(<CountdownTimer structure={baseStructure} />);
+    renderTimer();
 
     fireEvent.click(screen.getByRole('button', { name: 'Play' }));
     act(() => {
@@ -103,7 +112,7 @@ describe('CountdownTimer', () => {
 
   it('does not reset the time when the user cancels the confirmation', () => {
     vi.spyOn(window, 'confirm').mockReturnValue(false);
-    render(<CountdownTimer structure={baseStructure} />);
+    renderTimer();
 
     fireEvent.click(screen.getByRole('button', { name: 'Increase time by 1 minute' }));
     fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
@@ -112,7 +121,7 @@ describe('CountdownTimer', () => {
   });
 
   it('hides the hours segment when the remaining time is under 60 minutes', () => {
-    render(<CountdownTimer structure={baseStructure} />);
+    renderTimer();
 
     expect(screen.getByRole('timer')).toHaveTextContent('03:00');
     expect(screen.getByRole('timer')).not.toHaveTextContent(':03:00');
@@ -123,19 +132,19 @@ describe('CountdownTimer', () => {
       ...baseStructure,
       levels: [{ ...baseStructure.levels[0], initialSeconds: 65 * 60 + 49 }, ...baseStructure.levels.slice(1)],
     };
-    render(<CountdownTimer structure={structure} />);
+    renderTimer(structure);
 
     expect(screen.getByRole('timer')).toHaveTextContent('1:05:49');
   });
 
   it('disables the Previous button on the first level', () => {
-    render(<CountdownTimer structure={baseStructure} />);
+    renderTimer();
 
     expect(screen.getByRole('button', { name: 'Previous level' })).toBeDisabled();
   });
 
   it('moves to the next level when Next is pressed, and enables Previous', () => {
-    render(<CountdownTimer structure={baseStructure} />);
+    renderTimer();
 
     fireEvent.click(screen.getByRole('button', { name: 'Next level' }));
 
@@ -145,7 +154,7 @@ describe('CountdownTimer', () => {
   });
 
   it('moves back to the previous level when Previous is pressed', () => {
-    render(<CountdownTimer structure={baseStructure} />);
+    renderTimer();
 
     fireEvent.click(screen.getByRole('button', { name: 'Next level' }));
     fireEvent.click(screen.getByRole('button', { name: 'Previous level' }));
@@ -156,7 +165,7 @@ describe('CountdownTimer', () => {
   });
 
   it('prompts to end the game when Next is pressed on the last level, and ends it when confirmed', () => {
-    render(<CountdownTimer structure={baseStructure} />);
+    renderTimer();
 
     fireEvent.click(screen.getByRole('button', { name: 'Next level' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next level' }));
@@ -171,7 +180,7 @@ describe('CountdownTimer', () => {
   });
 
   it('does not end the game when the user cancels the last-level confirmation', () => {
-    render(<CountdownTimer structure={baseStructure} />);
+    renderTimer();
 
     fireEvent.click(screen.getByRole('button', { name: 'Next level' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next level' }));
@@ -184,7 +193,7 @@ describe('CountdownTimer', () => {
   });
 
   it('automatically advances to the next level and keeps running when a level expires', () => {
-    render(<CountdownTimer structure={baseStructure} />);
+    renderTimer();
 
     fireEvent.click(screen.getByRole('button', { name: 'Play' }));
     act(() => {
@@ -197,7 +206,7 @@ describe('CountdownTimer', () => {
   });
 
   it('automatically ends the game when the last level expires', () => {
-    render(<CountdownTimer structure={baseStructure} />);
+    renderTimer();
 
     fireEvent.click(screen.getByRole('button', { name: 'Next level' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next level' }));
@@ -209,5 +218,33 @@ describe('CountdownTimer', () => {
 
     expect(screen.getByText('Game has ended')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Play' })).toBeDisabled();
+  });
+
+  it('prompts to stop the timer before going to Settings, and pauses when confirmed', () => {
+    renderTimer();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Play' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+
+    expect(window.confirm).toHaveBeenCalledWith('Stop the timer and go to Settings?');
+    expect(screen.getByRole('button', { name: 'Play' })).toBeInTheDocument();
+  });
+
+  it('does not pause or navigate away when the user cancels the stop-timer prompt', () => {
+    renderTimer();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Play' }));
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+
+    expect(screen.getByRole('button', { name: 'Pause' })).toBeInTheDocument();
+  });
+
+  it('navigates to Settings without prompting when the timer is not running', () => {
+    renderTimer();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+
+    expect(window.confirm).not.toHaveBeenCalled();
   });
 });

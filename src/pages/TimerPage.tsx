@@ -1,8 +1,8 @@
 import { CountdownTimer } from '../components/CountdownTimer';
-import { getDefaultBlindStructure } from '../services/blindStructureService';
+import { getSelectedBlindStructure } from '../services/blindStructureStorage';
 
 export function TimerPage() {
-  const structure = getDefaultBlindStructure();
+  const structure = getSelectedBlindStructure();
 
   return <CountdownTimer structure={structure} />;
 }

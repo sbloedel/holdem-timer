@@ -145,6 +145,13 @@
   transform: translateY(-50%);
 }
 
+.settingsPosition {
+  position: absolute;
+  right: clamp(0.85rem, 4vw, 1.5rem);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
 .transportGroup {
   display: flex;
   align-items: center;
