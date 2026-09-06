@@ -9,7 +9,8 @@
   width: 100%;
   max-width: 800px;
   margin: 0 auto;
-  padding: clamp(1.5rem, 4vw, 2.5rem) 1rem clamp(2rem, 6vw, 3.5rem);
+  padding: clamp(1.5rem, 4vw, 2.5rem) 1rem
+    calc(clamp(2rem, 6vw, 3.5rem) + env(safe-area-inset-bottom, 0px));
   box-sizing: border-box;
 }
 
@@ -165,11 +166,12 @@
 @media (max-height: 500px) {
   .container {
     gap: clamp(0.35rem, 2vh, 0.85rem);
-    padding: clamp(0.35rem, 2vh, 0.75rem) 0.75rem clamp(0.5rem, 2.5vh, 1rem);
+    padding: clamp(0.35rem, 2vh, 0.75rem) 0.75rem
+      calc(clamp(0.5rem, 2.5vh, 1rem) + env(safe-area-inset-bottom, 0px));
   }
 
   .title {
-    font-size: clamp(1rem, 5.5vh, 1.5rem);
+    font-size: clamp(1.15rem, 7.5vh, 2rem);
     margin: 0 0 clamp(0.35rem, 2vh, 0.85rem);
   }
 
@@ -180,19 +182,19 @@
 
   .blindLabel {
     margin-bottom: clamp(0.15rem, 1vh, 0.35rem);
-    font-size: clamp(0.7rem, 2.2vh, 0.9rem);
+    font-size: clamp(0.85rem, 2.8vh, 1.1rem);
   }
 
   .blindValue {
-    font-size: clamp(1.1rem, 5vh, 1.75rem);
+    font-size: clamp(1.4rem, 7vh, 2.5rem);
   }
 
   .display {
-    font-size: clamp(1.75rem, 13vh, 4rem);
+    font-size: clamp(2.1rem, 16.5vh, 5.25rem);
   }
 
   .displayWithHours {
-    font-size: clamp(1.5rem, 10.5vh, 3rem);
+    font-size: clamp(1.85rem, 13.5vh, 4.25rem);
   }
 
   .adjustButton {

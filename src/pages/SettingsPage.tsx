@@ -120,6 +120,10 @@ export function SettingsPage() {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const rowRefs = useRef(new Map<string, HTMLTableRowElement>());
+  // Snapshot of the draft as it looked when editing/creating started, used to
+  // detect unsaved changes (ignoring the `id` fields, which are re-generated
+  // and would otherwise always look "different").
+  const draftBaselineRef = useRef<StructureDraft | null>(null);
 
   const [structures, setStructures] = useState<BlindStructure[]>(() => getAllBlindStructures());
   const [selectedName, setSelectedName] = useState<string | null>(() => getSelectedStructureName());
@@ -134,26 +138,40 @@ export function SettingsPage() {
   };
 
   const handleCreateNew = () => {
-    setDraft({ originalName: null, name: '', description: '', levels: [createLevelDraft(0)] });
+    if (!confirmDiscardChanges()) {
+      return;
+    }
+    const newDraft: StructureDraft = { originalName: null, name: '', description: '', levels: [createLevelDraft(0)] };
+    setDraft(newDraft);
+    draftBaselineRef.current = newDraft;
     setNameError(null);
   };
 
   const handleEdit = (structure: BlindStructure) => {
-    setDraft({
+    if (!confirmDiscardChanges()) {
+      return;
+    }
+    const newDraft: StructureDraft = {
       originalName: structure.name,
       name: structure.name,
       description: structure.description,
       levels: structure.levels.map(toLevelDraft),
-    });
+    };
+    setDraft(newDraft);
+    draftBaselineRef.current = newDraft;
     setNameError(null);
   };
 
   const handleCancelEdit = () => {
     setDraft(null);
+    draftBaselineRef.current = null;
     setNameError(null);
   };
 
   const handleSelectAndGoToClock = (name: string) => {
+    if (!confirmDiscardChanges()) {
+      return;
+    }
     setSelectedStructureName(name);
     navigate('/');
   };
@@ -169,26 +187,68 @@ export function SettingsPage() {
     deleteBlindStructure(name);
     if (draft?.originalName === name) {
       setDraft(null);
+      draftBaselineRef.current = null;
     }
     refresh();
   };
 
-  const handleSaveDraft = () => {
+  const normalizeLevelForCompare = (level: LevelDraft) => ({
+    title: level.title,
+    minutes: level.minutes,
+    smallBlind: level.smallBlind,
+    bigBlind: level.bigBlind,
+    ante: level.ante,
+  });
+
+  const isDraftDirty = (): boolean => {
+    const baseline = draftBaselineRef.current;
+    if (!draft || !baseline) {
+      return false;
+    }
+    return (
+      draft.name !== baseline.name ||
+      draft.description !== baseline.description ||
+      JSON.stringify(draft.levels.map(normalizeLevelForCompare)) !==
+        JSON.stringify(baseline.levels.map(normalizeLevelForCompare))
+    );
+  };
+
+  /** Returns true if it's safe to proceed with switching away from the
+   * current draft (no unsaved changes, changes were discarded, or changes
+   * were saved successfully). Returns false if the caller should abort
+   * (e.g. the user chose to save but validation failed). */
+  const confirmDiscardChanges = (): boolean => {
+    if (!isDraftDirty()) {
+      return true;
+    }
+    const shouldSave = window.confirm(
+      'You have unsaved changes to this blind structure. Click OK to save them, or Cancel to discard them.',
+    );
+    if (shouldSave) {
+      return saveDraftInternal();
+    }
+    setDraft(null);
+    draftBaselineRef.current = null;
+    setNameError(null);
+    return true;
+  };
+
+  const saveDraftInternal = (): boolean => {
     if (!draft) {
-      return;
+      return true;
     }
     const trimmedName = draft.name.trim();
     if (!trimmedName) {
       setNameError('Name is required.');
-      return;
+      return false;
     }
     if (structureNameExists(trimmedName, draft.originalName ?? undefined)) {
       setNameError('A blind structure with this name already exists.');
-      return;
+      return false;
     }
     if (draft.levels.length === 0) {
       window.alert('Add at least one level.');
-      return;
+      return false;
     }
 
     const newStructure: BlindStructure = {
@@ -198,8 +258,14 @@ export function SettingsPage() {
     };
     saveBlindStructure(newStructure, draft.originalName ?? undefined);
     setDraft(null);
+    draftBaselineRef.current = null;
     setNameError(null);
     refresh();
+    return true;
+  };
+
+  const handleSaveDraft = () => {
+    saveDraftInternal();
   };
 
   const updateLevelField = (id: string, field: keyof Omit<LevelDraft, 'id'>, value: string) => {

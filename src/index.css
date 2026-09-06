@@ -56,8 +56,13 @@
   margin: 0 auto;
   text-align: center;
   border-inline: 1px solid var(--border);
-  min-height: 100svh;
+  /* Use the smallest guaranteed-visible viewport height (accounts for iOS
+     Safari's landscape toolbar/tab bar, which can't collapse while page
+     scrolling is locked) so content — especially the bottom controls bar —
+     is never pushed below the visible area. Declared last so it wins over
+     `dvh` in browsers that support both. */
   min-height: 100dvh;
+  min-height: 100svh;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
