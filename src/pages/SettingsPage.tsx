@@ -37,7 +37,17 @@ function generateId(): string {
   return typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : Math.random().toString(36).slice(2);
 }
 
-function createLevelDraft(index: number): LevelDraft {
+function createLevelDraft(index: number, previous?: LevelDraft): LevelDraft {
+  if (previous) {
+    return {
+      id: generateId(),
+      title: `Level ${index + 1}`,
+      minutes: previous.minutes,
+      smallBlind: String((Number.parseInt(previous.smallBlind, 10) || 0) * 2),
+      bigBlind: String((Number.parseInt(previous.bigBlind, 10) || 0) * 2),
+      ante: previous.ante,
+    };
+  }
   return { id: generateId(), title: `Level ${index + 1}`, minutes: '5', smallBlind: '10', bigBlind: '20', ante: '0' };
 }
 
@@ -131,6 +141,11 @@ export function SettingsPage() {
   const [nameError, setNameError] = useState<string | null>(null);
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+  // Set while a navigation away from a dirty draft is pending confirmation
+  // (see `guardNavigation`/`isDraftDirty`). Holding the action itself (as
+  // opposed to just a boolean) lets the Save/Discard/Cancel dialog resume
+  // whichever navigation triggered it once the user has decided.
+  const [pendingNavigation, setPendingNavigation] = useState<(() => void) | null>(null);
 
   const refresh = () => {
     setStructures(getAllBlindStructures());
@@ -138,42 +153,43 @@ export function SettingsPage() {
   };
 
   const handleCreateNew = () => {
-    if (!confirmDiscardChanges()) {
-      return;
-    }
-    const newDraft: StructureDraft = { originalName: null, name: '', description: '', levels: [createLevelDraft(0)] };
-    setDraft(newDraft);
-    draftBaselineRef.current = newDraft;
-    setNameError(null);
+    guardNavigation(() => {
+      const newDraft: StructureDraft = { originalName: null, name: '', description: '', levels: [createLevelDraft(0)] };
+      setDraft(newDraft);
+      draftBaselineRef.current = newDraft;
+      setNameError(null);
+    });
   };
 
   const handleEdit = (structure: BlindStructure) => {
-    if (!confirmDiscardChanges()) {
-      return;
-    }
-    const newDraft: StructureDraft = {
-      originalName: structure.name,
-      name: structure.name,
-      description: structure.description,
-      levels: structure.levels.map(toLevelDraft),
-    };
-    setDraft(newDraft);
-    draftBaselineRef.current = newDraft;
-    setNameError(null);
+    guardNavigation(() => {
+      const newDraft: StructureDraft = {
+        originalName: structure.name,
+        name: structure.name,
+        description: structure.description,
+        levels: structure.levels.map(toLevelDraft),
+      };
+      setDraft(newDraft);
+      draftBaselineRef.current = newDraft;
+      setNameError(null);
+    });
   };
 
-  const handleCancelEdit = () => {
+  const discardDraft = () => {
     setDraft(null);
     draftBaselineRef.current = null;
     setNameError(null);
   };
 
+  const handleCancelEdit = () => {
+    guardNavigation(discardDraft);
+  };
+
   const handleSelectAndGoToClock = (name: string) => {
-    if (!confirmDiscardChanges()) {
-      return;
-    }
-    setSelectedStructureName(name);
-    navigate('/');
+    guardNavigation(() => {
+      setSelectedStructureName(name);
+      navigate('/');
+    });
   };
 
   const handleDelete = (name: string) => {
@@ -213,24 +229,40 @@ export function SettingsPage() {
     );
   };
 
-  /** Returns true if it's safe to proceed with switching away from the
-   * current draft (no unsaved changes, changes were discarded, or changes
-   * were saved successfully). Returns false if the caller should abort
-   * (e.g. the user chose to save but validation failed). */
-  const confirmDiscardChanges = (): boolean => {
+  /** Runs `action` immediately if there are no unsaved changes to the
+   * current draft. Otherwise, defers it and shows the Save/Discard/Cancel
+   * dialog so the user decides what happens to those changes first. */
+  const guardNavigation = (action: () => void): void => {
     if (!isDraftDirty()) {
-      return true;
+      action();
+      return;
     }
-    const shouldSave = window.confirm(
-      'You have unsaved changes to this blind structure. Click OK to save them, or Cancel to discard them.',
-    );
-    if (shouldSave) {
-      return saveDraftInternal();
+    setPendingNavigation(() => action);
+  };
+
+  const handleDialogSave = () => {
+    if (saveDraftInternal()) {
+      const action = pendingNavigation;
+      setPendingNavigation(null);
+      action?.();
     }
-    setDraft(null);
-    draftBaselineRef.current = null;
-    setNameError(null);
-    return true;
+    // If saving failed validation (e.g. duplicate/blank name), keep the
+    // dialog closed and the editor open with the error so the user can fix
+    // it, without losing or applying the pending navigation.
+    else {
+      setPendingNavigation(null);
+    }
+  };
+
+  const handleDialogDiscard = () => {
+    const action = pendingNavigation;
+    setPendingNavigation(null);
+    discardDraft();
+    action?.();
+  };
+
+  const handleDialogCancel = () => {
+    setPendingNavigation(null);
   };
 
   const saveDraftInternal = (): boolean => {
@@ -284,8 +316,20 @@ export function SettingsPage() {
       updateLevelField(id, field, event.target.value.replace(/[^0-9]/g, ''));
     };
 
+  // Auto-select a numeric field's text on focus so the user can type over
+  // the existing value directly instead of having to clear it first.
+  const handleNumericFieldFocus = (event: React.FocusEvent<HTMLInputElement>) => {
+    event.target.select();
+  };
+
   const addLevel = () => {
-    setDraft((current) => (current ? { ...current, levels: [...current.levels, createLevelDraft(current.levels.length)] } : current));
+    setDraft((current) => {
+      if (!current) {
+        return current;
+      }
+      const previous = current.levels[current.levels.length - 1];
+      return { ...current, levels: [...current.levels, createLevelDraft(current.levels.length, previous)] };
+    });
   };
 
   const removeLevel = (id: string) => {
@@ -586,6 +630,7 @@ export function SettingsPage() {
                         value={levelDraft.minutes}
                         aria-label={`Level ${index + 1} minutes`}
                         onChange={handleNumericFieldChange(levelDraft.id, 'minutes')}
+                        onFocus={handleNumericFieldFocus}
                       />
                     </td>
                     <td>
@@ -597,6 +642,7 @@ export function SettingsPage() {
                         value={levelDraft.smallBlind}
                         aria-label={`Level ${index + 1} small blind`}
                         onChange={handleNumericFieldChange(levelDraft.id, 'smallBlind')}
+                        onFocus={handleNumericFieldFocus}
                       />
                     </td>
                     <td>
@@ -608,6 +654,7 @@ export function SettingsPage() {
                         value={levelDraft.bigBlind}
                         aria-label={`Level ${index + 1} big blind`}
                         onChange={handleNumericFieldChange(levelDraft.id, 'bigBlind')}
+                        onFocus={handleNumericFieldFocus}
                       />
                     </td>
                     <td>
@@ -619,6 +666,7 @@ export function SettingsPage() {
                         value={levelDraft.ante}
                         aria-label={`Level ${index + 1} ante`}
                         onChange={handleNumericFieldChange(levelDraft.id, 'ante')}
+                        onFocus={handleNumericFieldFocus}
                       />
                     </td>
                     <td>
@@ -638,17 +686,46 @@ export function SettingsPage() {
             </table>
           </div>
 
-          <button type="button" className={styles.button} onClick={addLevel}>
-            + Add Level
+          <button
+            type="button"
+            className={`${styles.iconButton} ${styles.addLevelButton}`}
+            onClick={addLevel}
+            aria-label="Add Level"
+          >
+            <PlusIcon />
           </button>
 
           <div className={styles.editorActions}>
-            <button type="button" className={styles.button} onClick={handleSaveDraft}>
+            <button type="button" className={`${styles.button} ${styles.primaryButton}`} onClick={handleSaveDraft}>
               Save
             </button>
             <button type="button" className={styles.button} onClick={handleCancelEdit}>
               Cancel
             </button>
+          </div>
+        </div>
+      )}
+
+      {pendingNavigation && (
+        <div className={styles.modalOverlay} role="presentation">
+          <div className={styles.modalDialog} role="alertdialog" aria-modal="true" aria-labelledby="unsaved-changes-title">
+            <h2 id="unsaved-changes-title" className={styles.modalTitle}>
+              Unsaved changes
+            </h2>
+            <p className={styles.modalBody}>
+              You have unsaved changes. Save before switching?
+            </p>
+            <div className={styles.modalActions}>
+              <button type="button" className={`${styles.button} ${styles.primaryButton}`} onClick={handleDialogSave}>
+                Save
+              </button>
+              <button type="button" className={styles.button} onClick={handleDialogDiscard}>
+                Discard
+              </button>
+              <button type="button" className={styles.button} onClick={handleDialogCancel}>
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
