@@ -1,6 +1,6 @@
 import type { BlindStructure } from '../models/BlindStructure';
 import type { TimerLevel } from '../models/TimerLevel';
-import { getDefaultBlindStructure } from './blindStructureService';
+import { getDefaultBlindStructure, getWsopBlindStructure } from './blindStructureService';
 
 const STRUCTURES_KEY = 'holdem-timer:blindStructures';
 const SELECTED_KEY = 'holdem-timer:selectedStructureName';
@@ -54,14 +54,14 @@ function writeRaw(structures: BlindStructure[]): void {
 
 /**
  * Returns all saved blind structures, seeding local storage with the
- * default sample structure the first time the app runs.
+ * built-in sample structures the first time the app runs.
  */
 export function getAllBlindStructures(): BlindStructure[] {
   const existing = readRaw();
   if (existing.length > 0) {
     return existing;
   }
-  const seeded = [getDefaultBlindStructure()];
+  const seeded = [getDefaultBlindStructure(), getWsopBlindStructure()];
   writeRaw(seeded);
   return seeded;
 }

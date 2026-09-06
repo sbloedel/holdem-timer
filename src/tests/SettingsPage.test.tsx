@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { SettingsPage } from '../pages/SettingsPage';
 import {
+  deleteBlindStructure,
   getAllBlindStructures,
   getSelectedStructureName,
   saveBlindStructure,
@@ -141,6 +142,7 @@ describe('SettingsPage', () => {
 
   it('prevents deleting the last remaining structure', () => {
     vi.spyOn(window, 'alert').mockImplementation(() => {});
+    deleteBlindStructure('WSOP'); // leave only Sample Home Game so it's the last remaining structure
     renderSettings();
 
     const item = screen.getByText('Sample Home Game').closest('li')!;

@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { BlindStructure } from '../models/BlindStructure';
 import type { TimerLevel } from '../models/TimerLevel';
+import { playLevelChangeChime } from '../services/levelChangeSound';
 
 export interface UseBlindStructureTimerResult {
   level: TimerLevel;
@@ -82,6 +83,17 @@ export function useBlindStructureTimer(structure: BlindStructure): UseBlindStruc
     setLevelIndex(nextIndex);
     setSecondsLeft(levels[nextIndex].initialSeconds);
   }, [secondsLeft, isRunning, isLastLevel, levelIndex, levels]);
+
+  // Plays a short chime whenever the level advances forward (whether via
+  // the automatic countdown expiring or a manual "next level" action), but
+  // not on the initial mount or when moving backward.
+  const previousLevelIndexRef = useRef(levelIndex);
+  useEffect(() => {
+    if (levelIndex > previousLevelIndexRef.current) {
+      playLevelChangeChime();
+    }
+    previousLevelIndexRef.current = levelIndex;
+  }, [levelIndex]);
 
   const start = useCallback(() => setIsRunning(true), []);
   const pause = useCallback(() => setIsRunning(false), []);

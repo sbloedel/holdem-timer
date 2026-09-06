@@ -2,6 +2,7 @@ import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBlindStructureTimer } from '../hooks/useBlindStructureTimer';
 import type { BlindStructure } from '../models/BlindStructure';
+import * as levelChangeSound from '../services/levelChangeSound';
 
 const structure: BlindStructure = {
   name: 'Test Structure',
@@ -123,5 +124,22 @@ describe('useBlindStructureTimer', () => {
 
     act(() => result.current.adjustBy(-100));
     expect(result.current.totalSeconds).toBe(0);
+  });
+
+  it('plays a chime when the level advances but not on mount or when moving backward', () => {
+    const chimeSpy = vi.spyOn(levelChangeSound, 'playLevelChangeChime').mockImplementation(() => {});
+    const { result } = renderHook(() => useBlindStructureTimer(structure));
+
+    expect(chimeSpy).not.toHaveBeenCalled();
+
+    act(() => result.current.goToNext());
+    expect(chimeSpy).toHaveBeenCalledTimes(1);
+
+    act(() => result.current.goToPrevious());
+    expect(chimeSpy).toHaveBeenCalledTimes(1);
+
+    act(() => result.current.start());
+    act(() => vi.advanceTimersByTime(5000));
+    expect(chimeSpy).toHaveBeenCalledTimes(2);
   });
 });
