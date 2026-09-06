@@ -25,12 +25,12 @@ describe('blindStructureStorage', () => {
     localStorage.clear();
   });
 
-  it('seeds a default structure on first read and keeps returning it', () => {
+  it('seeds the default sample structures on first read and keeps returning them', () => {
     const structures = getAllBlindStructures();
 
-    expect(structures).toHaveLength(1);
+    expect(structures).toHaveLength(2);
     expect(structures[0].levels.length).toBeGreaterThan(0);
-    expect(getAllBlindStructures()).toHaveLength(1);
+    expect(getAllBlindStructures()).toHaveLength(2);
   });
 
   it('saves a new structure and finds it by name', () => {
