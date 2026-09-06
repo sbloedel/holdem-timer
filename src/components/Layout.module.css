@@ -1,5 +1,13 @@
 .app {
-  min-height: 100vh;
+  /* Match #root's viewport unit strategy (see index.css): a plain 100vh
+     matches iOS Safari's *largest* viewport (toolbar collapsed), so when
+     the toolbar is visible this element can become taller than what's
+     actually visible. Combined with the clock screen's scroll lock
+     (overflow: hidden), that clipped the bottom controls bar right off
+     the screen instead of letting it scroll into view. dvh/svh track the
+     real, currently-visible viewport instead. */
+  min-height: 100dvh;
+  min-height: 100svh;
   display: flex;
   flex-direction: column;
 }

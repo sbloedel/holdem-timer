@@ -77,7 +77,7 @@ describe('SettingsPage', () => {
     fireEvent.click(within(item).getByRole('button', { name: 'Edit Sample Home Game' }));
 
     const initialLevelCount = screen.getAllByLabelText(/title$/i).length;
-    fireEvent.click(screen.getByRole('button', { name: '+ Add Level' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add Level' }));
     expect(screen.getAllByLabelText(/title$/i)).toHaveLength(initialLevelCount + 1);
 
     fireEvent.click(screen.getByRole('button', { name: `Remove level ${initialLevelCount + 1}` }));
@@ -249,5 +249,111 @@ describe('SettingsPage', () => {
 
     expect(screen.getByLabelText('Level 1 title')).toHaveValue('Level 2');
     expect(screen.getByLabelText('Level 2 title')).toHaveValue('Level 1');
+  });
+
+  it('auto-selects a numeric field\'s text on focus', () => {
+    renderSettings();
+
+    const item = screen.getByText('Sample Home Game').closest('li')!;
+    fireEvent.click(within(item).getByRole('button', { name: 'Edit Sample Home Game' }));
+
+    const smallBlindInput = screen.getByLabelText('Level 1 small blind') as HTMLInputElement;
+    const selectSpy = vi.spyOn(smallBlindInput, 'select');
+    fireEvent.focus(smallBlindInput);
+
+    expect(selectSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('defaults a new level from the previous level (doubled blinds, same ante/minutes)', () => {
+    renderSettings();
+
+    const item = screen.getByText('Sample Home Game').closest('li')!;
+    fireEvent.click(within(item).getByRole('button', { name: 'Edit Sample Home Game' }));
+
+    const lastIndex = screen.getAllByLabelText(/title$/i).length;
+    const previousSmallBlind = (screen.getByLabelText(`Level ${lastIndex} small blind`) as HTMLInputElement).value;
+    const previousBigBlind = (screen.getByLabelText(`Level ${lastIndex} big blind`) as HTMLInputElement).value;
+    const previousAnte = (screen.getByLabelText(`Level ${lastIndex} ante`) as HTMLInputElement).value;
+    const previousMinutes = (screen.getByLabelText(`Level ${lastIndex} minutes`) as HTMLInputElement).value;
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add Level' }));
+
+    const newIndex = lastIndex + 1;
+    expect(screen.getByLabelText(`Level ${newIndex} small blind`)).toHaveValue(
+      String(Number(previousSmallBlind) * 2),
+    );
+    expect(screen.getByLabelText(`Level ${newIndex} big blind`)).toHaveValue(String(Number(previousBigBlind) * 2));
+    expect(screen.getByLabelText(`Level ${newIndex} ante`)).toHaveValue(previousAnte);
+    expect(screen.getByLabelText(`Level ${newIndex} minutes`)).toHaveValue(previousMinutes);
+  });
+
+  it('shows a Save/Discard/Cancel dialog when switching away from a dirty draft, and Cancel keeps editing', () => {
+    saveBlindStructure({
+      name: 'Second Structure',
+      description: '',
+      levels: [{ title: 'Level 1', initialSeconds: 60, smallBlind: 1, bigBlind: 2 }],
+    });
+    renderSettings();
+
+    const item = screen.getByText('Sample Home Game').closest('li')!;
+    fireEvent.click(within(item).getByRole('button', { name: 'Edit Sample Home Game' }));
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Sample Home Game Edited' } });
+
+    const otherItem = screen.getByText('Second Structure').closest('li')!;
+    fireEvent.click(within(otherItem).getByRole('button', { name: 'Edit Second Structure' }));
+
+    const dialog = screen.getByRole('alertdialog');
+    expect(within(dialog).getByText('You have unsaved changes. Save before switching?')).toBeInTheDocument();
+
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Name')).toHaveValue('Sample Home Game Edited');
+  });
+
+  it('discards changes and proceeds when Discard is chosen in the unsaved-changes dialog', () => {
+    saveBlindStructure({
+      name: 'Second Structure',
+      description: '',
+      levels: [{ title: 'Level 1', initialSeconds: 60, smallBlind: 1, bigBlind: 2 }],
+    });
+    renderSettings();
+
+    const item = screen.getByText('Sample Home Game').closest('li')!;
+    fireEvent.click(within(item).getByRole('button', { name: 'Edit Sample Home Game' }));
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Sample Home Game Edited' } });
+
+    const otherItem = screen.getByText('Second Structure').closest('li')!;
+    fireEvent.click(within(otherItem).getByRole('button', { name: 'Edit Second Structure' }));
+    const dialog = screen.getByRole('alertdialog');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Discard' }));
+
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    expect(screen.getByText('Edit Blind Structure')).toBeInTheDocument();
+    expect(screen.getByLabelText('Name')).toHaveValue('Second Structure');
+    expect(getAllBlindStructures().some((s) => s.name === 'Sample Home Game Edited')).toBe(false);
+  });
+
+  it('saves changes and proceeds when Save is chosen in the unsaved-changes dialog', () => {
+    saveBlindStructure({
+      name: 'Second Structure',
+      description: '',
+      levels: [{ title: 'Level 1', initialSeconds: 60, smallBlind: 1, bigBlind: 2 }],
+    });
+    renderSettings();
+
+    const item = screen.getByText('Sample Home Game').closest('li')!;
+    fireEvent.click(within(item).getByRole('button', { name: 'Edit Sample Home Game' }));
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Sample Home Game Edited' } });
+
+    const otherItem = screen.getByText('Second Structure').closest('li')!;
+    fireEvent.click(within(otherItem).getByRole('button', { name: 'Edit Second Structure' }));
+
+    const dialog = screen.getByRole('alertdialog');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
+
+    expect(screen.queryByText('You have unsaved changes. Save before switching?')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Name')).toHaveValue('Second Structure');
+    expect(getAllBlindStructures().some((s) => s.name === 'Sample Home Game Edited')).toBe(true);
   });
 });

@@ -48,6 +48,20 @@
   background: rgba(255, 255, 255, 0.08);
 }
 
+/* A clear "primary action" look (solid blue, white text) for the main
+   Save actions, distinct from the outlined default .button style. */
+.primaryButton {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #fff;
+  font-weight: 600;
+}
+
+.primaryButton:not(:disabled):hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
 .iconButton {
   flex-shrink: 0;
   background: transparent;
@@ -80,6 +94,13 @@
 .rowIconButton {
   width: 2rem;
   height: 2rem;
+}
+
+/* "+ Add Level" — icon-only, sits just below the levels table. */
+.addLevelButton {
+  width: 2.25rem;
+  height: 2.25rem;
+  margin-bottom: 0.5rem;
 }
 
 .hiddenInput {
@@ -267,4 +288,43 @@
   display: flex;
   gap: 0.75rem;
   margin-top: 1.25rem;
+}
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 100;
+}
+
+.modalDialog {
+  background: var(--bg, #16171d);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 26rem;
+  box-sizing: border-box;
+}
+
+.modalTitle {
+  margin: 0 0 0.5rem;
+  font-size: 1.15rem;
+}
+
+.modalBody {
+  margin: 0 0 1.25rem;
+  opacity: 0.85;
+}
+
+.modalActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.75rem;
 }
