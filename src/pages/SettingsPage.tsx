@@ -489,11 +489,11 @@ export function SettingsPage() {
         >
           <PlusIcon />
         </button>
-        <button type="button" className={styles.button} onClick={handleExportAll}>
-          Export
-        </button>
         <button type="button" className={styles.button} onClick={handleImportButtonClick}>
           Import
+        </button>
+        <button type="button" className={styles.button} onClick={handleExportAll}>
+          Export
         </button>
         <input
           ref={fileInputRef}

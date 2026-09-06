@@ -181,11 +181,11 @@
 
   .title {
     font-size: clamp(1.15rem, 7.5dvh, 2rem);
-    margin: 0 0 clamp(0.35rem, 2dvh, 0.85rem);
+    margin: 0 0 clamp(0.5rem, 3dvh, 1.25rem);
   }
 
   .blinds {
-    margin-top: clamp(0.35rem, 2dvh, 0.85rem);
+    margin-top: clamp(0.5rem, 3dvh, 1.25rem);
     gap: clamp(1rem, 4vw, 2rem);
   }
 
@@ -199,11 +199,11 @@
   }
 
   .display {
-    font-size: clamp(2.1rem, 16.5dvh, 5.25rem);
+    font-size: clamp(2.25rem, 17.5dvh, 5.5rem);
   }
 
   .displayWithHours {
-    font-size: clamp(1.85rem, 13.5dvh, 4.25rem);
+    font-size: clamp(2rem, 14.5dvh, 4.5rem);
   }
 
   .adjustButton {
