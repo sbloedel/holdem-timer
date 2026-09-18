@@ -58,4 +58,4 @@ repositories.
 
 To enable Pages deployment on GitHub: **Settings → Pages → Source →
 GitHub Actions**. Once enabled, the app will be available at
-`https://<owner>.github.io/holdem-timer/`.
+`https://holdem-timer.com/`.
