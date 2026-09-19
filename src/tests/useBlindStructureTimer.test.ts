@@ -142,4 +142,15 @@ describe('useBlindStructureTimer', () => {
     act(() => vi.advanceTimersByTime(5000));
     expect(chimeSpy).toHaveBeenCalledTimes(2);
   });
+
+  it('primes the audio context on start so the first cue is not blocked by autoplay policy', () => {
+    const primeSpy = vi.spyOn(levelChangeSound, 'primeLevelChangeAudio').mockImplementation(() => {});
+    const { result } = renderHook(() => useBlindStructureTimer(structure));
+
+    expect(primeSpy).not.toHaveBeenCalled();
+
+    act(() => result.current.start());
+
+    expect(primeSpy).toHaveBeenCalledTimes(1);
+  });
 });

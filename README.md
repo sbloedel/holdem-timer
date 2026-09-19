@@ -22,12 +22,31 @@ src/
   routes/       Central route configuration (routes.tsx)
   services/     Framework-agnostic logic (API calls, business rules, presets)
   tests/        Test suite (Vitest + Testing Library)
+  types/        Ambient type declarations for non-standard browser APIs
 ```
 
 To add a new page:
 1. Create a component in `src/pages/`.
 2. Register it in `src/routes/routes.tsx`.
 3. Add any supporting logic under `hooks/`, `services/`, or `components/`.
+
+## Blind level audio cues
+
+When the blinds go up the app plays a synthesized "ding-ding" bell chime
+(Web Audio API — no audio assets shipped), and once the chime has rung out
+it speaks "Blinds have gone up" via the Web Speech API. Both are
+feature-detected, so nothing breaks in browsers that lack them, and any
+queued announcement is cancelled before a new one so rapid level skips
+don't stack up.
+
+**Silent-switch caveat:** the cue is played through the Web Audio API and
+the page opts into the `playback` audio session
+(`navigator.audioSession.type = 'playback'`, Safari/iOS 16.4+), which lets
+audio keep playing on iOS with the hardware mute switch engaged. This is
+**best-effort and browser-dependent** — overriding the silent switch cannot
+be guaranteed on every device or OS version. The AudioContext is created
+and resumed from the play button (a user gesture) so autoplay policies
+don't block the first cue.
 
 ## npm scripts
 

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { BlindStructure } from '../models/BlindStructure';
 import type { TimerLevel } from '../models/TimerLevel';
-import { playLevelChangeChime } from '../services/levelChangeSound';
+import { playLevelChangeChime, primeLevelChangeAudio } from '../services/levelChangeSound';
 
 export interface UseBlindStructureTimerResult {
   level: TimerLevel;
@@ -95,7 +95,14 @@ export function useBlindStructureTimer(structure: BlindStructure): UseBlindStruc
     previousLevelIndexRef.current = levelIndex;
   }, [levelIndex]);
 
-  const start = useCallback(() => setIsRunning(true), []);
+  // `start` is only ever called from the play button, so it's a safe place to
+  // create/resume the AudioContext: browsers require a user gesture before
+  // audio can play, and this is also where the 'playback' audio session gets
+  // established so the chime can be heard over the iOS silent switch.
+  const start = useCallback(() => {
+    primeLevelChangeAudio();
+    setIsRunning(true);
+  }, []);
   const pause = useCallback(() => setIsRunning(false), []);
 
   const reset = useCallback(() => {
