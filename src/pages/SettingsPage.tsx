@@ -11,6 +11,7 @@ import {
   setSelectedStructureName,
   structureNameExists,
 } from '../services/blindStructureStorage';
+import { SITE_ORIGIN, useSeo } from '../hooks/useSeo';
 import styles from './SettingsPage.module.css';
 
 /** A level as edited in the form: numeric fields are raw strings so the
@@ -127,6 +128,13 @@ function GripIcon() {
 }
 
 export function SettingsPage() {
+  useSeo({
+    title: 'Blind Structure Settings - Holdem Timer Poker Clock',
+    description:
+      "Create, edit, import and export custom Texas Hold'em blind structures for the Holdem Timer poker clock - set blind level lengths, small blind, big blind and ante.",
+    canonical: `${SITE_ORIGIN}/settings`,
+  });
+
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const rowRefs = useRef(new Map<string, HTMLTableRowElement>());
