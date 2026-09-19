@@ -39,14 +39,34 @@ feature-detected, so nothing breaks in browsers that lack them, and any
 queued announcement is cancelled before a new one so rapid level skips
 don't stack up.
 
+Speech synthesis is notoriously inconsistent across engines, so the
+announcement defends against several well-known failure modes:
+
+- **Utterance garbage collection** — Chrome and Firefox can collect a
+  still-speaking `SpeechSynthesisUtterance` that nothing references, cutting
+  it off (often before it starts). The active utterance is held in module
+  scope for its whole lifetime.
+- **`cancel()` then `speak()` in the same tick** — reliably silent in
+  Chrome/Edge. We only `cancel()` when something is actually speaking or
+  pending, and always `speak()` on a later tick.
+- **Voices load asynchronously** — `getVoices()` is empty until the engine
+  finishes enumerating. We wait for `voiceschanged` with a timeout fallback
+  (Firefox and some Chrome builds never fire it), and explicitly pick an
+  English voice.
+- **A stuck `paused` engine** swallows every utterance, so `resume()` is
+  called when `paused` is set.
+- **Silent queue stalls** — a watchdog retries once if the utterance never
+  starts, and an `onerror` handler plus a final warning log mean failures
+  surface in the console instead of disappearing.
+
 **Silent-switch caveat:** the cue is played through the Web Audio API and
 the page opts into the `playback` audio session
 (`navigator.audioSession.type = 'playback'`, Safari/iOS 16.4+), which lets
 audio keep playing on iOS with the hardware mute switch engaged. This is
 **best-effort and browser-dependent** — overriding the silent switch cannot
-be guaranteed on every device or OS version. The AudioContext is created
-and resumed from the play button (a user gesture) so autoplay policies
-don't block the first cue.
+be guaranteed on every device or OS version. The AudioContext is created and
+resumed, and speech synthesis is unlocked with a silent utterance, from the
+play button (a user gesture) so autoplay policies don't block the first cue.
 
 ## npm scripts
 
