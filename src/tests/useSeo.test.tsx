@@ -30,11 +30,11 @@ describe('useSeo', () => {
   });
 
   it('mirrors the title and description into the Open Graph tags', () => {
-    render(<Probe title="Settings" description="Edit blind structures." canonical={`${SITE_ORIGIN}/settings`} />);
+    render(<Probe title="Settings" description="Edit blind structures." canonical={`${SITE_ORIGIN}/settings/`} />);
 
     expect(metaContent('meta[property="og:title"]')).toBe('Settings');
     expect(metaContent('meta[property="og:description"]')).toBe('Edit blind structures.');
-    expect(metaContent('meta[property="og:url"]')).toBe('https://holdem-timer.com/settings');
+    expect(metaContent('meta[property="og:url"]')).toBe('https://holdem-timer.com/settings/');
   });
 
   it('reuses the existing canonical link instead of adding a second one', () => {
@@ -43,10 +43,10 @@ describe('useSeo', () => {
     existing.setAttribute('href', 'https://holdem-timer.com/');
     document.head.appendChild(existing);
 
-    render(<Probe title="Settings" description="Edit blind structures." canonical={`${SITE_ORIGIN}/settings`} />);
+    render(<Probe title="Settings" description="Edit blind structures." canonical={`${SITE_ORIGIN}/settings/`} />);
 
     expect(document.head.querySelectorAll('link[rel="canonical"]')).toHaveLength(1);
-    expect(canonicalHref()).toBe('https://holdem-timer.com/settings');
+    expect(canonicalHref()).toBe('https://holdem-timer.com/settings/');
   });
 
   it('emits robots noindex and no canonical for a noindex route', () => {

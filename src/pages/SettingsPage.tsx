@@ -132,7 +132,7 @@ export function SettingsPage() {
     title: 'Blind Structure Settings - Holdem Timer Poker Clock',
     description:
       "Create, edit, import and export custom Texas Hold'em blind structures for the Holdem Timer poker clock - set blind level lengths, small blind, big blind and ante.",
-    canonical: `${SITE_ORIGIN}/settings`,
+    canonical: `${SITE_ORIGIN}/settings/`,
   });
 
   const navigate = useNavigate();

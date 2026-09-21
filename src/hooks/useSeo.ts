@@ -14,6 +14,11 @@ export interface SeoOptions {
    * Absolute URL for `<link rel="canonical">`. Omit it for pages that must
    * not be indexed (the 404 route) — a canonical on an error page is what
    * makes Google treat unknown paths as duplicates of the home page.
+   *
+   * Always use the trailing-slash form for directory-style routes
+   * (`/settings/`, not `/settings`). GitHub Pages serves `settings/index.html`
+   * at `/settings/` and 301-redirects `/settings` to it, so a no-slash
+   * canonical points at a redirect and neither URL ever gets indexed.
    */
   canonical?: string;
   /** When true, emits `<meta name="robots" content="noindex">`. */

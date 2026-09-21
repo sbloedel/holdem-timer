@@ -80,16 +80,19 @@ const settingsDescription =
   "Create, edit, import and export custom Texas Hold'em blind structures for the Holdem Timer poker clock - set blind level lengths, small blind, big blind and ante.";
 
 let settings = withMetadata(index, { title: settingsTitle, description: settingsDescription });
+// Trailing slash is required: Pages serves this file at /settings/ and
+// 301-redirects /settings to it, so a no-slash canonical would point Google at
+// a redirect that leads straight back here — and neither URL gets indexed.
 settings = replaceOrThrow(
   settings,
   CANONICAL,
-  `\n    <link rel="canonical" href="${SITE_ORIGIN}/settings" />`,
+  `\n    <link rel="canonical" href="${SITE_ORIGIN}/settings/" />`,
   'canonical link',
 );
 settings = replaceOrThrow(
   settings,
   OG_URL,
-  `<meta property="og:url" content="${SITE_ORIGIN}/settings" />`,
+  `<meta property="og:url" content="${SITE_ORIGIN}/settings/" />`,
   'og:url',
 );
 settings = replaceOrThrow(
